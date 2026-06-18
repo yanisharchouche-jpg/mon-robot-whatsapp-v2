@@ -439,6 +439,61 @@ app.get("/test-whatsapp/:phone", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// ROUTE POLITIQUE DE CONFIDENTIALITÉ (requis pour Meta App Live)
+// ─────────────────────────────────────────────────────────────
+app.get("/privacy", (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Politique de Confidentialité — dzhomedeco</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.6; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    h2 { color: #444; margin-top: 30px; }
+    p { margin: 10px 0; }
+    a { color: #0066cc; }
+  </style>
+</head>
+<body>
+  <h1>Politique de Confidentialité</h1>
+  <p><strong>Dernière mise à jour :</strong> ${new Date().toLocaleDateString("fr-FR")}</p>
+
+  <h2>1. Collecte des données</h2>
+  <p>Dans le cadre de nos services de e-commerce, nous collectons uniquement les données nécessaires au traitement de vos commandes : nom, numéro de téléphone, adresse de livraison et email.</p>
+
+  <h2>2. Utilisation des données</h2>
+  <p>Vos données sont utilisées exclusivement pour :</p>
+  <ul>
+    <li>Confirmer votre commande par message WhatsApp</li>
+    <li>Organiser la livraison de votre commande</li>
+    <li>Vous contacter en cas de problème avec votre commande</li>
+  </ul>
+
+  <h2>3. Messages WhatsApp</h2>
+  <p>En passant une commande sur notre site, vous acceptez de recevoir un message de confirmation automatique sur WhatsApp. Ces messages sont envoyés via l'API officielle Meta WhatsApp Business. Vous pouvez répondre STOP à tout moment pour ne plus recevoir de messages.</p>
+
+  <h2>4. Partage des données</h2>
+  <p>Nous ne vendons, ne louons et ne partageons pas vos données personnelles avec des tiers, sauf dans le cadre de la livraison de votre commande (transporteur).</p>
+
+  <h2>5. Conservation des données</h2>
+  <p>Vos données sont conservées pendant la durée nécessaire au traitement de votre commande, puis supprimées dans un délai maximum de 12 mois.</p>
+
+  <h2>6. Vos droits</h2>
+  <p>Conformément à la réglementation en vigueur, vous disposez des droits d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous.</p>
+
+  <h2>7. Sécurité</h2>
+  <p>Vos données sont protégées par des mesures de sécurité appropriées. Les transmissions sont chiffrées via HTTPS.</p>
+
+  <h2>8. Contact</h2>
+  <p>Pour toute question relative à cette politique, contactez-nous via WhatsApp Business : dzhomedeco.</p>
+</body>
+</html>`);
+});
+
+// ─────────────────────────────────────────────────────────────
 // DÉMARRAGE
 // ─────────────────────────────────────────────────────────────
 app.listen(CONFIG.server.port, () => {
