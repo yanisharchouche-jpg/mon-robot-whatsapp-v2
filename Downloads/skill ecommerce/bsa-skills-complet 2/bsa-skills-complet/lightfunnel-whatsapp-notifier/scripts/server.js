@@ -276,6 +276,27 @@ async function sendWhatsAppMessage(toPhone, message) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// ROUTE VÉRIFICATION WEBHOOK META (GET) — Requis pour configurer les webhooks
+// ─────────────────────────────────────────────────────────────
+app.get("/webhooks/lightfunnel", (req, res) => {
+  const VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || "dzhomedeco_verify_2024";
+
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  console.log(`🔐 Vérification webhook Meta: mode=${mode}, token=${token}`);
+
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("✅ Webhook Meta vérifié avec succès !");
+    res.status(200).send(challenge);
+  } else {
+    console.warn("❌ Vérification webhook échouée - token invalide");
+    res.status(403).send("Forbidden");
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // ROUTE PRINCIPALE — WEBHOOK LIGHTFUNNEL
 // ─────────────────────────────────────────────────────────────
 app.post("/webhooks/lightfunnel", async (req, res) => {
