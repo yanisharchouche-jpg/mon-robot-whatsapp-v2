@@ -160,101 +160,48 @@ function extractOrderData(payload) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// TEMPLATES DE MESSAGES WHATSAPP
+// CONSTRUCTION DU PAYLOAD WHATSAPP (TEMPLATE)
 // ─────────────────────────────────────────────────────────────
-function buildWhatsAppMessage(orderData, market = "DZ") {
-  const { customerName, orderNumber, productList, totalPrice, currency, city } =
-    orderData;
+function buildWhatsAppPayload(toPhone, orderData) {
+  const { customerName, orderNumber, totalPrice, currency, productList, city } = orderData;
+  
+  // Prendre juste le prénom pour faire plus naturel
+  const firstName = customerName.split(" ")[0] || "Client";
+  const totalStr = `${totalPrice} ${currency}`;
+  const orderCity = city || "—"; // Valeur par défaut si la ville est vide
 
-  const templates = {
-    // 🇩🇿 Darija Algérienne
-    DZ: `✅ *تأكيد طلبيتك*
-
-مرحبا ${customerName}! 🎉
-
-طلبيتك رقم *#${orderNumber}* تأكدت.
-
-🛍️ *المنتجات:*
-${productList}
-
-💰 *المبلغ الإجمالي:* ${totalPrice} ${currency}
-📍 *المدينة:* ${city || "—"}
-
-سيتصل بيك فريقنا في أقرب وقت لتأكيد الموعد. ⏳
-
-شكرا على ثقتك فينا! 🙏`,
-
-    // 🇫🇷 Français
-    FR: `✅ *Confirmation de votre commande*
-
-Bonjour ${customerName} ! 🎉
-
-Votre commande *#${orderNumber}* est bien confirmée.
-
-🛍️ *Articles commandés :*
-${productList}
-
-💰 *Total :* ${totalPrice} ${currency}
-📍 *Ville :* ${city || "—"}
-
-Notre équipe vous contactera très prochainement pour confirmer la livraison. ⏳
-
-Merci pour votre confiance ! 🙏`,
-
-    // 🇪🇸 Espagnol (marché ES)
-    ES: `✅ *Confirmación de tu pedido*
-
-¡Hola ${customerName}! 🎉
-
-Tu pedido *#${orderNumber}* ha sido confirmado.
-
-🛍️ *Productos pedidos:*
-${productList}
-
-💰 *Total:* ${totalPrice} ${currency}
-📍 *Ciudad:* ${city || "—"}
-
-Nuestro equipo se pondrá en contacto contigo para confirmar la entrega. ⏳
-
-¡Gracias por tu confianza! 🙏`,
-
-    // 🇵🇹 Portugais (marché PT)
-    PT: `✅ *Confirmação do seu pedido*
-
-Olá ${customerName}! 🎉
-
-O seu pedido *#${orderNumber}* foi confirmado.
-
-🛍️ *Produtos pedidos:*
-${productList}
-
-💰 *Total:* ${totalPrice} ${currency}
-📍 *Cidade:* ${city || "—"}
-
-A nossa equipa entrará em contacto consigo para confirmar a entrega. ⏳
-
-Obrigado pela sua confiança! 🙏`,
+  // Utilisation du Modèle (Template) WhatsApp détaillé 'confirmation_detaillee_dz'
+  return {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: toPhone,
+    type: "template",
+    template: {
+      name: "confirmation_detaillee_dz",
+      language: {
+        code: "ar" // Remettre "fr" si vous aviez choisi Français lors de la création
+      },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: firstName },         // {{1}}
+            { type: "text", text: orderNumber },       // {{2}}
+            { type: "text", text: productList },       // {{3}}
+            { type: "text", text: totalStr },          // {{4}}
+            { type: "text", text: orderCity }          // {{5}}
+          ]
+        }
+      ]
+    }
   };
-
-  return templates[market] || templates["DZ"];
 }
 
 // ─────────────────────────────────────────────────────────────
 // ENVOI WHATSAPP (Meta Cloud API)
 // ─────────────────────────────────────────────────────────────
-async function sendWhatsAppMessage(toPhone, message) {
+async function sendWhatsAppMessage(payload) {
   const url = `https://graph.facebook.com/${CONFIG.whatsapp.apiVersion}/${CONFIG.whatsapp.phoneNumberId}/messages`;
-
-  const payload = {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to: toPhone,
-    type: "text",
-    text: {
-      preview_url: false,
-      body: message,
-    },
-  };
 
   try {
     const response = await axios.post(url, payload, {
@@ -265,12 +212,12 @@ async function sendWhatsAppMessage(toPhone, message) {
     });
 
     console.log(
-      `✅ WhatsApp envoyé → ${toPhone} | Message ID: ${response.data.messages?.[0]?.id}`
+      `✅ WhatsApp envoyé → ${payload.to} | Message ID: ${response.data.messages?.[0]?.id}`
     );
     return { success: true, messageId: response.data.messages?.[0]?.id };
   } catch (error) {
     const errData = error.response?.data || error.message;
-    console.error(`❌ Erreur WhatsApp → ${toPhone}:`, JSON.stringify(errData));
+    console.error(`❌ Erreur WhatsApp → ${payload.to}:`, JSON.stringify(errData));
     return { success: false, error: errData };
   }
 }
@@ -361,11 +308,11 @@ app.post("/webhooks/lightfunnel", async (req, res) => {
     // 5. Formater le numéro de téléphone
     const formattedPhone = formatPhoneNumber(orderData.phone, CONFIG.market);
 
-    // 6. Construire le message
-    const message = buildWhatsAppMessage(orderData, CONFIG.market);
+    // 6. Construire le message (Template Payload)
+    const payloadMsg = buildWhatsAppPayload(formattedPhone, orderData);
 
     // 7. Envoyer le message WhatsApp
-    const result = await sendWhatsAppMessage(formattedPhone, message);
+    const result = await sendWhatsAppMessage(payloadMsg);
 
     const duration = Date.now() - startTime;
     console.log(
